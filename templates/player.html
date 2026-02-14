@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% block title %}{{ player.name }} – Stats{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<a href="/stats{% if selected_game_id is not none %}?game_id={{ selected_game_id }}{% endif %}" class="text-gray-400 hover:text-orange-400 mb-6 inline-block touch-manipulation min-touch flex items-center transition-colors">
+    <span class="mr-1">←</span> Back to Stats
+</a>
+
+<div class="animate-fade-in">
+    <h1 class="text-2xl sm:text-3xl font-bold mb-6">{{ player.name }}</h1>
+
+    <div class="mb-6">
+        <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Filter by Game</h2>
+        <div class="flex flex-wrap gap-2">
+            <a href="/player/{{ player.id }}" class="px-4 py-2 rounded-xl text-sm font-medium transition-all touch-manipulation min-touch
+                {% if selected_game_id is none %}bg-orange-500 text-white border-2 border-orange-500
+                {% else %}bg-slate-800 text-gray-300 border-2 border-slate-600 hover:border-slate-500{% endif %}">
+                All Games
+            </a>
+            {% for g in games %}
+            <a href="/player/{{ player.id }}?game_id={{ g.id }}" class="px-4 py-2 rounded-xl text-sm font-medium transition-all touch-manipulation min-touch
+                {% if selected_game_id == g.id %}bg-orange-500 text-white border-2 border-orange-500
+                {% else %}bg-slate-800 text-gray-300 border-2 border-slate-600 hover:border-slate-500{% endif %}">
+                {{ g.name }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3 mb-8">
+        <div class="bg-slate-800/80 backdrop-blur rounded-2xl p-4 border border-slate-700/80">
+            <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Total points</p>
+            <p class="text-xl font-bold text-yellow-400">{{ overall.score }}</p>
+        </div>
+        <div class="bg-slate-800/80 backdrop-blur rounded-2xl p-4 border border-slate-700/80">
+            <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Kings</p>
+            <p class="text-xl font-bold text-amber-400">{{ overall.king_count }}</p>
+        </div>
+        <div class="bg-slate-800/80 backdrop-blur rounded-2xl p-4 border border-slate-700/80">
+            <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Cones</p>
+            <p class="text-xl font-bold text-orange-500">{{ overall.cone_count }}</p>
+        </div>
+        <div class="bg-slate-800/80 backdrop-blur rounded-2xl p-4 border border-slate-700/80">
+            <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Sessions played</p>
+            <p class="text-xl font-bold text-gray-300">{{ overall.sessions_count }}</p>
+        </div>
+    </div>
+
+    {% if by_game %}
+    <section class="mb-8">
+        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+            <span>📊</span> By Game
+        </h2>
+        <div class="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <table class="w-full min-w-[320px] border-collapse bg-slate-800/80 backdrop-blur rounded-2xl border border-slate-700/80 overflow-hidden">
+                <thead>
+                    <tr class="text-left text-sm text-gray-400 border-b border-slate-700">
+                        <th class="py-3 px-4 font-semibold sticky left-0 bg-slate-800/95">Game</th>
+                        <th class="py-3 px-4 font-semibold">Sessions</th>
+                        <th class="py-3 px-4 font-semibold">Points</th>
+                        <th class="py-3 px-4 font-semibold">Kings</th>
+                        <th class="py-3 px-4 font-semibold">Cones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in by_game %}
+                    <tr class="border-b border-slate-700/60 last:border-0">
+                        <td class="py-3 px-4 font-medium sticky left-0 bg-slate-800/80">{{ row.game_name }}</td>
+                        <td class="py-3 px-4">{{ row.sessions_count }}</td>
+                        <td class="py-3 px-4 font-mono text-yellow-400">{{ row.score }}</td>
+                        <td class="py-3 px-4 text-amber-400">{{ row.king_count }}</td>
+                        <td class="py-3 px-4 text-orange-500">{{ row.cone_count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if session_history %}
+    <section class="mb-8">
+        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+            <span>📜</span> Session History
+        </h2>
+        <div class="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <table class="w-full min-w-[320px] border-collapse bg-slate-800/80 backdrop-blur rounded-2xl border border-slate-700/80 overflow-hidden">
+                <thead>
+                    <tr class="text-left text-sm text-gray-400 border-b border-slate-700">
+                        <th class="py-3 px-4 font-semibold sticky left-0 bg-slate-800/95">Date</th>
+                        <th class="py-3 px-4 font-semibold">Game</th>
+                        <th class="py-3 px-4 font-semibold">Score</th>
+                        <th class="py-3 px-4 font-semibold">Rank</th>
+                        <th class="py-3 px-4 font-semibold">King/Cone</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for h in session_history %}
+                    <tr class="border-b border-slate-700/60 last:border-0">
+                        <td class="py-3 px-4 text-sm sticky left-0 bg-slate-800/80">{{ h.date.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td class="py-3 px-4">{{ h.game_name }}</td>
+                        <td class="py-3 px-4 font-mono text-yellow-400">{{ h.score_in_session }}</td>
+                        <td class="py-3 px-4">#{{ h.rank_in_session }}</td>
+                        <td class="py-3 px-4">
+                            {% if h.was_king %}👑{% elif h.was_cone %}⚠️{% else %}—{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if chart_over_time %}
+    <section class="mb-8">
+        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+            <span>📈</span> Score Over Time
+        </h2>
+        <div class="bg-slate-800/80 backdrop-blur rounded-2xl p-4 border border-slate-700/80" style="max-height: 280px;">
+            <canvas id="chartOverTime" aria-label="Score over time"></canvas>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if by_game %}
+    <section class="mb-8">
+        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+            <span>📊</span> Points by Game
+        </h2>
+        <div class="bg-slate-800/80 backdrop-blur rounded-2xl p-4 border border-slate-700/80" style="max-height: 280px;">
+            <canvas id="chartByGame" aria-label="Points by game"></canvas>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if not session_history and not by_game %}
+    <p class="text-gray-500 text-center py-8">No sessions for this player{% if selected_game_id is not none %} in this game{% endif %} yet.</p>
+    {% endif %}
+</div>
+
+{% if chart_over_time or by_game %}
+<script>
+(function() {
+    var overTimeData = {{ chart_over_time_js | safe }};
+    var byGameData = {{ by_game_js | safe }};
+
+    var chartOverTimeEl = document.getElementById('chartOverTime');
+    if (overTimeData.length && chartOverTimeEl && typeof Chart !== 'undefined') {
+        new Chart(chartOverTimeEl, {
+            type: 'line',
+            data: {
+                labels: overTimeData.map(function(d) { return d.date_label; }),
+                datasets: [{
+                    label: 'Score',
+                    data: overTimeData.map(function(d) { return d.score; }),
+                    borderColor: 'rgb(251, 191, 36)',
+                    backgroundColor: 'rgba(251, 191, 36, 0.1)',
+                    fill: true,
+                    tension: 0.2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 1.5,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#94a3b8', maxRotation: 45 },
+                        grid: { color: 'rgba(148, 163, 184, 0.2)' }
+                    },
+                    y: {
+                        ticks: { color: '#94a3b8' },
+                        grid: { color: 'rgba(148, 163, 184, 0.2)' }
+                    }
+                }
+            }
+        });
+    }
+
+    var chartByGameEl = document.getElementById('chartByGame');
+    if (byGameData.length && chartByGameEl && typeof Chart !== 'undefined') {
+        new Chart(chartByGameEl, {
+            type: 'bar',
+            data: {
+                labels: byGameData.map(function(d) { return d.game_name; }),
+                datasets: [{
+                    label: 'Points',
+                    data: byGameData.map(function(d) { return d.score; }),
+                    backgroundColor: 'rgba(249, 115, 22, 0.8)',
+                    borderColor: 'rgb(249, 115, 22)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 1.5,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#94a3b8', maxRotation: 45 },
+                        grid: { display: false }
+                    },
+                    y: {
+                        ticks: { color: '#94a3b8' },
+                        grid: { color: 'rgba(148, 163, 184, 0.2)' }
+                    }
+                }
+            }
+        });
+    }
+})();
+</script>
+{% endif %}
+{% endblock %}

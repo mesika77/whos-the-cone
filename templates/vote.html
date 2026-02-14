@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Vote – {{ session.game.name if session and session.game else 'Session' }}{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<a href="/" class="text-gray-400 hover:text-orange-400 mb-6 inline-block touch-manipulation min-touch flex items-center transition-colors">
+    <span class="mr-1">←</span> Back to Lobby
+</a>
+<div class="text-center mb-8 animate-fade-in">
+    <h2 class="text-2xl sm:text-3xl font-bold">{{ (session.game.name if session and session.game else 'Session') }} Session</h2>
+    <p class="text-gray-400 mt-2">Drag to rank performance (top = King, bottom = Cone)</p>
+</div>
+
+{% if error == "already_voted" %}
+<div class="mb-6 p-5 bg-red-900/50 border-2 border-red-600 rounded-2xl text-red-200 animate-slide-up flex items-start gap-3">
+    <span class="text-2xl">⚠️</span>
+    <div>
+        <p class="font-bold">You have already voted in this session.</p>
+        <p class="text-sm text-red-300/80 mt-1">Head to stats to see the leaderboard.</p>
+    </div>
+</div>
+{% elif error == "not_participant" %}
+<div class="mb-6 p-5 bg-red-900/50 border-2 border-red-600 rounded-2xl text-red-200 animate-slide-up flex items-start gap-3">
+    <span class="text-2xl">⚠️</span>
+    <div>
+        <p class="font-bold">Only session participants can vote.</p>
+        <p class="text-sm text-red-300/80 mt-1">Please select your identity from the list below.</p>
+    </div>
+</div>
+{% endif %}
+
+<form id="voteForm" action="/submit_vote" method="POST" class="animate-slide-up">
+    <input type="hidden" name="session_id" value="{{ session.id }}">
+
+    <div class="mb-6">
+        <label class="block text-sm text-orange-400 mb-2 font-bold">Who are you?</label>
+        <select name="voter_id" class="w-full bg-slate-800 border-2 border-orange-500 p-4 rounded-xl text-lg touch-manipulation min-touch focus:ring-2 focus:ring-orange-500/50 transition-all">
+            {% for p in session.participants %}
+            <option value="{{ p.id }}">{{ p.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="mb-6">
+        <p class="text-sm text-gray-400 mb-3 font-medium">Drag to reorder (top = King, bottom = Cone)</p>
+        <ul id="sortable-list" class="list-none p-0 m-0 space-y-3">
+            {% for p in session.participants %}
+            <li class="vote-rank-item bg-slate-800/80 backdrop-blur p-5 rounded-xl border-2 border-slate-600 flex items-center justify-between cursor-grab active:cursor-grabbing" data-id="{{ p.id }}">
+                <span class="vote-rank-name font-bold text-lg">{{ p.name }}</span>
+                <span class="vote-rank-icon text-2xl w-10 text-center">😐</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <input type="hidden" name="rankings" id="rankingsInput">
+    <button type="submit" id="submitBtn" class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 py-5 rounded-xl font-bold text-lg transition-all touch-manipulation min-touch shadow-lg hover:shadow-green-900/30 disabled:opacity-70 disabled:cursor-not-allowed">
+        SUBMIT VOTE ✅
+    </button>
+</form>
+
+<script>
+(function() {
+    var list = document.getElementById('sortable-list');
+    var form = document.getElementById('voteForm');
+    if (!list || !form) return;
+
+    function updateRankIcons() {
+        var items = list.querySelectorAll('.vote-rank-item');
+        items.forEach(function(item, idx) {
+            var iconEl = item.querySelector('.vote-rank-icon');
+            if (!iconEl) return;
+            if (idx === 0) iconEl.textContent = '\u{1F451}';       // 👑
+            else if (idx === items.length - 1) iconEl.textContent = '\u26A0\uFE0F'; // ⚠️
+            else iconEl.textContent = '\u{1F610}';               // 😐
+        });
+    }
+
+    if (typeof Sortable !== 'undefined') {
+        new Sortable(list, {
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            onEnd: updateRankIcons
+        });
+        updateRankIcons();
+    }
+
+    var voteSound = new Audio('/static/sounds/vote-submit.mp3');
+    var submitDelayMs = 2200;
+
+    form.onsubmit = function(e) {
+        e.preventDefault();
+        voteSound.currentTime = 0;
+        voteSound.play().catch(function() {});
+        var order = Array.from(list.querySelectorAll('.vote-rank-item')).map(function(item) {
+            return item.getAttribute('data-id');
+        });
+        document.getElementById('rankingsInput').value = JSON.stringify(order);
+        var btn = document.getElementById('submitBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
+        }
+        setTimeout(function() { form.submit(); }, submitDelayMs);
+    };
+})();
+</script>
+{% endblock %}

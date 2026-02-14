@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <link rel="icon" href="/static/cone.png" type="image/png">
+    <title>{% block title %}Who's the Cone?{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(12px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                        pulse: { '0%, 100%': { opacity: '1' }, '50%': { opacity: '0.7' } }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-out',
+                        'slide-up': 'slideUp 0.4s ease-out',
+                        'pulse-subtle': 'pulse 2s ease-in-out infinite'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+            .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+            .pt-safe { padding-top: env(safe-area-inset-top); }
+            .px-safe { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+        }
+        .min-touch { min-height: 44px; min-width: 44px; }
+        .touch-manipulation { touch-action: manipulation; }
+        .sortable-ghost { opacity: 0.4; }
+        .session-delay-0 { animation-delay: 0ms; }
+        .session-delay-1 { animation-delay: 80ms; }
+        .session-delay-2 { animation-delay: 160ms; }
+        .session-delay-3 { animation-delay: 240ms; }
+        .session-delay-4 { animation-delay: 320ms; }
+        .session-delay-5 { animation-delay: 400ms; }
+        .session-delay-6 { animation-delay: 480ms; }
+        .session-delay-7 { animation-delay: 560ms; }
+        .session-delay-8 { animation-delay: 640ms; }
+        .session-delay-9 { animation-delay: 720ms; }
+        .session-delay-10 { animation-delay: 800ms; }
+        .bg-cone::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url('/static/cone.png');
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-size: min(140vmin, 720px);
+            opacity: 0.28;
+            pointer-events: none;
+            z-index: -1;
+        }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white font-sans antialiased p-4 sm:p-6 pt-safe pb-safe px-safe max-w-lg mx-auto bg-cone">
+    {% block content %}{% endblock %}
+</body>
+</html>

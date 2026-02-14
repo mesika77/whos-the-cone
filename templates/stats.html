@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Stats & Admin – Who's the Cone?{% endblock %}
+
+{% block content %}
+<a href="/" class="text-gray-400 hover:text-orange-400 mb-6 inline-block touch-manipulation min-touch flex items-center transition-colors">
+    <span class="mr-1">←</span> Back to Lobby
+</a>
+
+<div class="animate-fade-in">
+    <div class="mb-6">
+        <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Filter by Game</h2>
+        <div class="flex flex-wrap gap-2">
+            <a href="/stats" class="px-4 py-2 rounded-xl text-sm font-medium transition-all touch-manipulation min-touch
+                {% if selected_game_id is none %}bg-orange-500 text-white border-2 border-orange-500
+                {% else %}bg-slate-800 text-gray-300 border-2 border-slate-600 hover:border-slate-500{% endif %}">
+                All Games
+            </a>
+            {% for g in games %}
+            <a href="/stats?game_id={{ g.id }}" class="px-4 py-2 rounded-xl text-sm font-medium transition-all touch-manipulation min-touch
+                {% if selected_game_id == g.id %}bg-orange-500 text-white border-2 border-orange-500
+                {% else %}bg-slate-800 text-gray-300 border-2 border-slate-600 hover:border-slate-500{% endif %}">
+                {{ g.name }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="bg-slate-800/80 backdrop-blur rounded-2xl p-6 mb-8 border border-slate-700/80 animate-slide-up">
+        <h2 class="text-xl font-bold mb-4 text-yellow-400 flex items-center gap-2">
+            <span>🏆</span> Leaderboard
+        </h2>
+        <div class="space-y-3">
+            {% for p in leaderboard %}
+            <a href="/player/{{ p.id }}{% if selected_game_id is not none %}?game_id={{ selected_game_id }}{% endif %}" class="player-profile-link flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 py-3 px-4 rounded-xl bg-slate-900/60 border border-slate-700/60 animate-slide-up hover:border-slate-500 transition-colors block touch-manipulation min-touch"
+                 data-animation-delay="{{ loop.index0 * 50 }}" data-player-name="{{ p.name }}">
+                <div class="flex items-center gap-3">
+                    <span class="text-lg font-bold text-slate-500 w-8">#{{ loop.index }}</span>
+                    <span class="font-bold text-lg">{{ p.name }}</span>
+                </div>
+                <div class="flex flex-wrap items-center gap-3 sm:gap-4">
+                    <span class="font-mono font-bold text-yellow-400">{{ p.score }} pts</span>
+                    <div class="flex gap-3 text-sm">
+                        <span class="flex items-center gap-1 text-gray-400" title="Sessions participated">
+                            <span class="text-xs">📊</span> {{ p.sessions_participated }}
+                        </span>
+                        <span class="flex items-center gap-1 text-amber-400" title="King count">
+                            👑 {{ p.king_count }}
+                        </span>
+                        <span class="flex items-center gap-1 text-orange-500" title="Cone count">
+                            ⚠️ {{ p.cone_count }}
+                        </span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+        <span>📜</span> Session History
+    </h2>
+    <div class="space-y-4">
+        {% for s in sessions %}
+        <div class="bg-slate-800/80 backdrop-blur p-5 rounded-2xl border border-slate-700/80 animate-slide-up"
+             data-animation-delay="{{ loop.index0 * 50 }}">
+            <div class="flex justify-between items-start gap-4 mb-2">
+                <div>
+                    <h3 class="font-bold text-lg">{{ s.game.name }}</h3>
+                    <p class="text-xs text-gray-400 mt-1">{{ s.date.strftime('%Y-%m-%d %H:%M') }}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="px-2 py-1 rounded-lg text-xs font-semibold
+                        {% if s.is_active %}bg-green-900/50 text-green-300 border border-green-700
+                        {% else %}bg-slate-700/50 text-gray-400 border border-slate-600{% endif %}">
+                        {% if s.is_active %}Active{% else %}Closed{% endif %}
+                    </span>
+                    <form action="/delete_session" method="POST" onsubmit="return confirm('Delete this session and all votes?');" class="inline">
+                        <input type="hidden" name="session_id" value="{{ s.id }}">
+                        {% if selected_game_id is not none %}<input type="hidden" name="game_id" value="{{ selected_game_id }}">{% endif %}
+                        <button type="submit" class="text-red-500 hover:text-red-400 text-sm font-bold border border-red-500 px-3 py-1.5 rounded-lg touch-manipulation min-touch transition-colors">
+                            DELETE
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="text-sm text-gray-300">
+                Players: {% for p in s.participants %}{{ p.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+            </div>
+            <div class="text-xs text-gray-500 mt-2">
+                {{ s.votes|length }} votes cast
+            </div>
+        </div>
+        {% else %}
+        <p class="text-gray-500 text-center py-8">No sessions yet.</p>
+        {% endfor %}
+    </div>
+</div>
+<script>
+(function() {
+    document.querySelectorAll('[data-animation-delay]').forEach(function(el) {
+        el.style.animationDelay = el.getAttribute('data-animation-delay') + 'ms';
+    });
+
+    var aughSound = new Audio('/static/sounds/augh.mp3');
+    var beckerSound = new Audio('/static/sounds/becker.mp3');
+    var alkoSound = new Audio('/static/sounds/alko.mp3');
+    var maorSound = new Audio('/static/sounds/maor.mp3');
+    var regevSoundDelayMs = 2800;
+    var beckerSoundDelayMs = 2800;
+    var alkoSoundDelayMs = 2800;
+    var maorSoundDelayMs = 2800;
+    document.querySelectorAll('a.player-profile-link').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            var name = link.getAttribute('data-player-name');
+            var sound, delayMs;
+            if (name === 'Regev') { sound = aughSound; delayMs = regevSoundDelayMs; }
+            else if (name === 'Becker') { sound = beckerSound; delayMs = beckerSoundDelayMs; }
+            else if (name === 'Alko') { sound = alkoSound; delayMs = alkoSoundDelayMs; }
+            else if (name === 'Maor') { sound = maorSound; delayMs = maorSoundDelayMs; }
+            else return;
+            e.preventDefault();
+            var href = link.getAttribute('href');
+            sound.currentTime = 0;
+            sound.play().catch(function() {});
+            setTimeout(function() { window.location.href = href; }, delayMs);
+        });
+    });
+})();
+</script>
+{% endblock %}

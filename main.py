@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
-from database import SessionLocal, Player, Game, Session as GameSession, Vote
+from database import SessionLocal, Player, Game, Session as GameSession, Vote, ensure_tables
 from datetime import datetime
 from typing import List, Optional
 import json
@@ -12,6 +12,22 @@ import json
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+@app.on_event("startup")
+def startup():
+    ensure_tables()
+    # Seed default players/games only when DB is empty (e.g. first deploy on Render)
+    db = SessionLocal()
+    try:
+        if db.query(Player).count() == 0:
+            for name in ["Maor", "Alko", "Becker", "Regev"]:
+                db.add(Player(name=name))
+            for name in ["FIFA", "Rainbow 6 Siege", "PUBG", "Call Of Duty", "Battlefield"]:
+                db.add(Game(name=name))
+            db.commit()
+    finally:
+        db.close()
 
 
 @app.get("/favicon.ico", include_in_schema=False)

@@ -1,9 +1,18 @@
+import os
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DateTime, Table
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from datetime import datetime
 
-DATABASE_URL = "sqlite:///./whos_the_cone.db"
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+# Use DATABASE_URL on Render (PostgreSQL) so data survives app sleep; SQLite locally
+_raw = os.environ.get("DATABASE_URL", "sqlite:///./whos_the_cone.db")
+if _raw.startswith("postgres://"):
+    _raw = "postgresql://" + _raw.split("://", 1)[1]
+DATABASE_URL = _raw
+
+connect_args = {} if "sqlite" in DATABASE_URL else {}
+if "sqlite" in DATABASE_URL:
+    connect_args["check_same_thread"] = False
+engine = create_engine(DATABASE_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -49,21 +58,30 @@ class Vote(Base):
     voter = relationship("Player", foreign_keys=[voter_id])
     target = relationship("Player", foreign_keys=[target_player_id])
 
+def ensure_tables():
+    """Create tables if they don't exist. Safe to call on every app startup (e.g. Render wake)."""
+    Base.metadata.create_all(bind=engine)
+
+
 def init_db():
-    Base.metadata.drop_all(bind=engine) # RESET DB for new structure
+    """Reset DB and seed (for local dev only). Destroys all data."""
+    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
-    
+
     # Seed Data
     players = ["Maor", "Alko", "Becker", "Regev"]
-    for p in players: db.add(Player(name=p))
-    
+    for p in players:
+        db.add(Player(name=p))
+
     games = ["FIFA", "Rainbow 6 Siege", "PUBG", "Call Of Duty", "Battlefield"]
-    for g in games: db.add(Game(name=g))
-    
+    for g in games:
+        db.add(Game(name=g))
+
     db.commit()
     db.close()
     print("✅ Database upgraded & reset!")
+
 
 if __name__ == "__main__":
     init_db()

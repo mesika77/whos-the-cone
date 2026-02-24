@@ -6,7 +6,7 @@ The system allows users to create gaming sessions, join them via a "Kahoot-style
 🛠 Tech Stack
 Backend: Python 3.10+ (FastAPI)
 
-Database: SQLite (via SQLAlchemy ORM)
+Database: SQLite locally; PostgreSQL on Render (via `DATABASE_URL`) so data survives app sleep
 
 Frontend: HTML5, Jinja2 Templates, Tailwind CSS (CDN)
 
@@ -42,6 +42,9 @@ Run the Server:
 Bash
 uvicorn main:app --reload
 Access the app at: http://127.0.0.1:8000
+
+**Deploying on Render (persistent data):**  
+Create a **PostgreSQL** database in the Render dashboard and add its **Internal Database URL** as an environment variable `DATABASE_URL` for your web service. The app will use it instead of SQLite so votes and sessions persist when the app sleeps.
 
 🧠 Core Logic & Features
 1. The Squad (Hardcoded Data)

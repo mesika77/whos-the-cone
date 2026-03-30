@@ -41,7 +41,6 @@ def test_results_page_not_found_redirects():
     assert response.headers["location"] == "/"
 
 
-@pytest.mark.skip(reason="results.html template not yet created (Task 2)")
 def test_results_page_renders_ranked_results(client, closed_session_with_votes):
     """Results page for a closed session renders 200 with player names."""
     session_id = closed_session_with_votes.id

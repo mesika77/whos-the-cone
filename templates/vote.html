@@ -86,9 +86,23 @@
         items.forEach(function(item, idx) {
             var iconEl = item.querySelector('.vote-rank-icon');
             if (!iconEl) return;
-            if (idx === 0) iconEl.textContent = '\u{1F451}';       // 👑
-            else if (idx === items.length - 1) iconEl.textContent = '\u26A0\uFE0F'; // ⚠️
-            else iconEl.textContent = '\u{1F610}';               // 😐
+            // Update icon
+            if (idx === 0) {
+                iconEl.textContent = '\u{1F451}'; // 👑
+            } else if (idx === items.length - 1) {
+                iconEl.textContent = '\u26A0\uFE0F'; // ⚠️
+            } else {
+                iconEl.textContent = '\u{1F610}'; // 😐
+            }
+            // Update border color
+            item.classList.remove('border-amber-400', 'border-orange-500', 'border-slate-600');
+            if (idx === 0) {
+                item.classList.add('border-amber-400');
+            } else if (idx === items.length - 1) {
+                item.classList.add('border-orange-500');
+            } else {
+                item.classList.add('border-slate-600');
+            }
         });
     }
 

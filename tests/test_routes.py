@@ -1,5 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
+from database import Player, Game, Session as GameSession
 from main import app
 
 client = TestClient(app)
@@ -38,3 +39,29 @@ def test_results_page_not_found_redirects():
     response = client.get("/results/0", follow_redirects=False)
     assert response.status_code in (302, 303)
     assert response.headers["location"] == "/"
+
+
+@pytest.mark.skip(reason="results.html template not yet created (Task 2)")
+def test_results_page_renders_ranked_results(client, closed_session_with_votes):
+    """Results page for a closed session renders 200 with player names."""
+    session_id = closed_session_with_votes.id
+    response = client.get(f"/results/{session_id}", follow_redirects=True)
+    assert response.status_code == 200
+    assert b"Maor" in response.content
+    assert b"Alko" in response.content
+
+
+def test_results_page_active_session_redirects_to_vote(client, db):
+    """Active session redirects to vote page, not results."""
+    game = Game(name="ActiveGame")
+    player = Player(name="TestPlayer")
+    db.add_all([game, player])
+    db.flush()
+    session = GameSession(game_id=game.id, is_active=1)
+    session.participants = [player]
+    db.add(session)
+    db.commit()
+
+    response = client.get(f"/results/{session.id}", follow_redirects=False)
+    assert response.status_code in (302, 303)
+    assert response.headers["location"] == f"/vote/{session.id}"

@@ -365,6 +365,8 @@ def results_page(request: Request, session_id: int, db: Session = Depends(get_db
     session = db.get(GameSession, session_id)
     if not session:
         return RedirectResponse(url="/", status_code=303)
+    if session.is_active == 1:
+        return RedirectResponse(url=f"/vote/{session_id}", status_code=303)
 
     ranked = []
     for p in session.participants:

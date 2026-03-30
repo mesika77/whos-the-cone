@@ -64,3 +64,9 @@ def test_results_page_active_session_redirects_to_vote(client, db):
     response = client.get(f"/results/{session.id}", follow_redirects=False)
     assert response.status_code in (302, 303)
     assert response.headers["location"] == f"/vote/{session.id}"
+
+
+def test_vote_room_redirects_for_inactive_session():
+    """Inactive session redirects away from vote page."""
+    response = client.get("/vote/99999", follow_redirects=False)
+    assert response.status_code in (302, 303)

@@ -79,10 +79,22 @@ def vote_room(request: Request, session_id: int, db: Session = Depends(get_db)):
         return RedirectResponse(url="/", status_code=303)
     if session.is_active == 0:
         return RedirectResponse(url="/stats", status_code=303)
+
+    voted_ids = {
+        v[0]
+        for v in db.query(Vote.voter_id)
+        .filter(Vote.session_id == session_id)
+        .distinct()
+        .all()
+    }
+    unvoted_participants = [p for p in session.participants if p.id not in voted_ids]
+
     error = request.query_params.get("error")
-    return templates.TemplateResponse(request=request, name="vote.html", context={
-        "session": session, "error": error
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="vote.html",
+        context={"session": session, "unvoted_participants": unvoted_participants, "error": error},
+    )
 
 @app.post("/submit_vote")
 def submit_vote(

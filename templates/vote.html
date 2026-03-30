@@ -36,14 +36,26 @@
     <input type="hidden" name="session_id" value="{{ session.id }}">
 
     <div class="mb-6">
+        {% if unvoted_participants %}
         <label class="block text-sm text-orange-400 mb-2 font-bold">Who are you?</label>
         <select name="voter_id" class="w-full bg-slate-800 border-2 border-orange-500 p-4 rounded-xl text-lg touch-manipulation min-touch focus:ring-2 focus:ring-orange-500/50 transition-all">
-            {% for p in session.participants %}
+            {% for p in unvoted_participants %}
             <option value="{{ p.id }}">{{ p.name }}</option>
             {% endfor %}
         </select>
+        {% else %}
+        <div class="p-5 bg-green-900/40 border-2 border-green-600 rounded-2xl text-green-200 text-center">
+            <p class="text-2xl mb-2">✅</p>
+            <p class="font-bold">All players have voted!</p>
+            <p class="text-sm text-green-300/80 mt-1">Check the results.</p>
+            <a href="/results/{{ session.id }}" class="inline-block mt-4 bg-orange-500 hover:bg-orange-400 text-white font-bold px-6 py-3 rounded-xl transition-all">
+                REVEAL THE CONE 🔥
+            </a>
+        </div>
+        {% endif %}
     </div>
 
+    {% if unvoted_participants %}
     <div class="mb-6">
         <p class="text-sm text-gray-400 mb-3 font-medium">Drag to reorder (top = King, bottom = Cone)</p>
         <ul id="sortable-list" class="list-none p-0 m-0 space-y-3">
@@ -60,6 +72,7 @@
     <button type="submit" id="submitBtn" class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 py-5 rounded-xl font-bold text-lg transition-all touch-manipulation min-touch shadow-lg hover:shadow-green-900/30 disabled:opacity-70 disabled:cursor-not-allowed">
         SUBMIT VOTE ✅
     </button>
+    {% endif %}
 </form>
 
 <script>

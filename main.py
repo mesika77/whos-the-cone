@@ -346,6 +346,44 @@ def player_page(
         "by_game_js": by_game_js,
     })
 
+# --- 6. RESULTS REVEAL PAGE ---
+@app.get("/results/latest", response_class=HTMLResponse)
+def results_latest(request: Request, db: Session = Depends(get_db)):
+    session = (
+        db.query(GameSession)
+        .filter(GameSession.is_active == 0)
+        .order_by(GameSession.date.desc())
+        .first()
+    )
+    if not session:
+        return RedirectResponse(url="/", status_code=303)
+    return RedirectResponse(url=f"/results/{session.id}", status_code=303)
+
+
+@app.get("/results/{session_id}", response_class=HTMLResponse)
+def results_page(request: Request, session_id: int, db: Session = Depends(get_db)):
+    session = db.get(GameSession, session_id)
+    if not session:
+        return RedirectResponse(url="/", status_code=303)
+
+    ranked = []
+    for p in session.participants:
+        score = (
+            db.query(func.sum(Vote.rank_score))
+            .filter(Vote.target_player_id == p.id, Vote.session_id == session_id)
+            .scalar()
+            or 0
+        )
+        ranked.append({"player": p, "score": score})
+    ranked.sort(key=lambda x: x["score"], reverse=True)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="results.html",
+        context={"session": session, "ranked": ranked},
+    )
+
+
 @app.post("/delete_session")
 def delete_session(
     session_id: int = Form(...),

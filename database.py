@@ -3,15 +3,20 @@ from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DateT
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from datetime import datetime
 
-# Use DATABASE_URL on Render (PostgreSQL) so data survives app sleep; SQLite locally
+# Use DATABASE_URL on Neon/PostgreSQL so data persists; SQLite locally
 _raw = os.environ.get("DATABASE_URL", "sqlite:///./whos_the_cone.db")
 if _raw.startswith("postgres://"):
     _raw = "postgresql://" + _raw.split("://", 1)[1]
+# Strip query params (e.g. ?sslmode=require) — pass SSL via connect_args to avoid psycopg2 parsing issues
+if "?" in _raw:
+    _raw = _raw.split("?")[0]
 DATABASE_URL = _raw
 
-connect_args = {} if "sqlite" in DATABASE_URL else {}
+connect_args = {}
 if "sqlite" in DATABASE_URL:
     connect_args["check_same_thread"] = False
+elif "postgresql" in DATABASE_URL:
+    connect_args["sslmode"] = "require"
 engine = create_engine(DATABASE_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()

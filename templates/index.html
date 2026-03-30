@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Who's the Cone?{% endblock %}
 
+{% block head %}
+{% if active_sessions %}
+<meta http-equiv="refresh" content="10">
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <div class="text-center mb-10 animate-fade-in">
     <h1 class="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-400 to-orange-500 mb-2">
@@ -17,13 +23,35 @@
     </h2>
     <div class="space-y-3">
         {% for s in active_sessions %}
-        <a href="/vote/{{ s.id }}" class="block bg-gradient-to-r from-green-700 to-green-800 hover:from-green-600 hover:to-green-700 p-5 rounded-2xl border border-green-600/50 flex flex-nowrap justify-between items-center gap-4 transition-all touch-manipulation min-touch shadow-lg hover:shadow-green-900/30 animate-slide-up session-delay-{{ loop.index0 if loop.index0 <= 10 else 10 }}">
-            <div class="min-w-0 flex-1">
-                <div class="font-bold text-lg text-white">{{ s.game.name }}</div>
-                <div class="text-sm text-green-200/90 mt-1">{{ s.date.strftime('%H:%M') }} · {{ s.participants|length }} players</div>
+        {% set prog = session_progress[s.id] %}
+        {% if prog.all_voted %}
+        <a href="/results/{{ s.id }}" class="block bg-gradient-to-r from-orange-700 to-orange-800 hover:from-orange-600 hover:to-orange-700 p-5 rounded-2xl border border-orange-500/60 transition-all touch-manipulation min-touch shadow-lg animate-slide-up session-delay-{{ loop.index0 if loop.index0 <= 10 else 10 }}">
+            <div class="flex flex-nowrap justify-between items-center gap-4">
+                <div class="min-w-0 flex-1">
+                    <div class="font-bold text-lg text-white">{{ s.game.name }}</div>
+                    <div class="text-sm text-orange-200/90 mt-1">{{ s.date.strftime('%H:%M') }} · All {{ prog.total }} voted!</div>
+                </div>
+                <span class="shrink-0 bg-white text-orange-700 px-4 py-2.5 rounded-xl text-sm font-black">REVEAL 🔥</span>
             </div>
-            <span class="shrink-0 bg-white/95 text-green-800 px-4 py-2.5 rounded-xl text-sm font-bold">JOIN</span>
         </a>
+        {% else %}
+        <a href="/vote/{{ s.id }}" class="block bg-gradient-to-r from-green-700 to-green-800 hover:from-green-600 hover:to-green-700 p-5 rounded-2xl border border-green-600/50 transition-all touch-manipulation min-touch shadow-lg animate-slide-up session-delay-{{ loop.index0 if loop.index0 <= 10 else 10 }}">
+            <div class="flex flex-nowrap justify-between items-center gap-4">
+                <div class="min-w-0 flex-1">
+                    <div class="font-bold text-lg text-white">{{ s.game.name }}</div>
+                    <div class="text-sm text-green-200/90 mt-1">
+                        {{ s.date.strftime('%H:%M') }} · {{ prog.voted_count }}/{{ prog.total }} voted
+                    </div>
+                    {% if prog.waiting %}
+                    <div class="text-xs text-green-300/70 mt-1">
+                        Waiting for: {{ prog.waiting | map(attribute='name') | join(', ') }}
+                    </div>
+                    {% endif %}
+                </div>
+                <span class="shrink-0 bg-white/95 text-green-800 px-4 py-2.5 rounded-xl text-sm font-bold">JOIN</span>
+            </div>
+        </a>
+        {% endif %}
         {% endfor %}
     </div>
 </div>

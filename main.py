@@ -43,15 +43,38 @@ def get_db():
 # --- 1. HOME (LOBBY) ---
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request, db: Session = Depends(get_db)):
-    # Show active sessions for people to join
-    active_sessions = db.query(GameSession).filter(GameSession.is_active == 1).order_by(GameSession.date.desc()).all()
+    active_sessions = (
+        db.query(GameSession)
+        .filter(GameSession.is_active == 1)
+        .order_by(GameSession.date.desc())
+        .all()
+    )
+
+    session_progress = {}
+    for s in active_sessions:
+        voted_ids = {v.voter_id for v in s.votes}
+        waiting = [p for p in s.participants if p.id not in voted_ids]
+        all_voted = len(waiting) == 0 and len(s.participants) > 0
+        session_progress[s.id] = {
+            "voted_count": len(voted_ids),
+            "total": len(s.participants),
+            "waiting": waiting,
+            "all_voted": all_voted,
+        }
+
     games = db.query(Game).all()
     players = db.query(Player).all()
-    
-    return templates.TemplateResponse(request=request, name="index.html", context={
-        "active_sessions": active_sessions,
-        "games": games, "players": players
-    })
+
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={
+            "active_sessions": active_sessions,
+            "session_progress": session_progress,
+            "games": games,
+            "players": players,
+        },
+    )
 
 # --- 2. CREATE SESSION (HOST) ---
 @app.post("/create_session")

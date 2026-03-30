@@ -48,8 +48,8 @@ def home(request: Request, db: Session = Depends(get_db)):
     games = db.query(Game).all()
     players = db.query(Player).all()
     
-    return templates.TemplateResponse("index.html", {
-        "request": request, "active_sessions": active_sessions, 
+    return templates.TemplateResponse(request=request, name="index.html", context={
+        "active_sessions": active_sessions,
         "games": games, "players": players
     })
 
@@ -80,8 +80,8 @@ def vote_room(request: Request, session_id: int, db: Session = Depends(get_db)):
     if session.is_active == 0:
         return RedirectResponse(url="/stats", status_code=303)
     error = request.query_params.get("error")
-    return templates.TemplateResponse("vote.html", {
-        "request": request, "session": session, "error": error
+    return templates.TemplateResponse(request=request, name="vote.html", context={
+        "session": session, "error": error
     })
 
 @app.post("/submit_vote")
@@ -177,8 +177,7 @@ def stats_page(
         })
     leaderboard.sort(key=lambda x: x["score"], reverse=True)
 
-    return templates.TemplateResponse("stats.html", {
-        "request": request,
+    return templates.TemplateResponse(request=request, name="stats.html", context={
         "sessions": sessions,
         "leaderboard": leaderboard,
         "games": games,
@@ -335,8 +334,7 @@ def player_page(
     ])
     by_game_js = json.dumps([{"game_name": g["game_name"], "score": g["score"]} for g in by_game])
 
-    return templates.TemplateResponse("player.html", {
-        "request": request,
+    return templates.TemplateResponse(request=request, name="player.html", context={
         "player": player,
         "games": games,
         "selected_game_id": game_id,

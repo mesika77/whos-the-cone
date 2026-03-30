@@ -2,10 +2,6 @@
 {% block title %}Results – {{ session.game.name }}{% endblock %}
 
 {% block content %}
-<a href="/" class="text-gray-400 hover:text-orange-400 mb-6 inline-flex items-center gap-1 touch-manipulation min-touch transition-colors">
-    <span>←</span> Back to Lobby
-</a>
-
 <div class="text-center mb-2 animate-fade-in">
     <p class="text-xs font-bold tracking-widest uppercase text-gray-500 mb-2">
         {{ session.game.name }} · {{ session.date.strftime('%d %b %Y') }}
@@ -31,7 +27,7 @@
     {% endif %}
 
     <div class="reveal-row flex items-center gap-4 p-4 rounded-2xl border-2 transition-all"
-         style="opacity:0; transform: translateY(16px);
+         style="opacity:0; transform: {% if is_last %}translateY(16px) scale(0.9){% else %}translateY(16px){% endif %};
                 {% if is_first %}border-color: #fbbf24; background: linear-gradient(135deg, #1e293b, #292018);
                 {% elif is_last %}border-color: #f97316; background: linear-gradient(135deg, #1e293b, #2d1a0e);
                 {% else %}border-color: #334155; background: #1e293b;{% endif %}"
@@ -79,7 +75,6 @@
         var isCone = row.getAttribute('data-is-cone') === 'true';
         if (delay > lastDelay) lastDelay = delay;
 
-        // Show divider just before the cone row
         if (isCone && divider) {
             setTimeout(function () {
                 divider.style.transition = 'opacity 0.4s ease';
@@ -88,12 +83,11 @@
         }
 
         setTimeout(function () {
-            row.style.transition = 'opacity 0.5s ease, transform 0.5s cubic-bezier(0.34,1.56,0.64,1)';
-            row.style.opacity = '1';
-            row.style.transform = 'translateY(0)';
-
             if (isCone) {
-                // Glow pulse
+                row.style.transition = 'opacity 0.4s ease, transform 0.6s cubic-bezier(0.34,1.56,0.64,1)';
+                row.style.transform = 'translateY(0) scale(1)';
+                row.style.opacity = '1';
+
                 setTimeout(function () {
                     row.style.boxShadow = '0 0 32px 6px rgba(249,115,22,0.4)';
                     setTimeout(function () {
@@ -102,7 +96,6 @@
                     }, 400);
                 }, 300);
 
-                // Show CONE badge
                 var badge = row.querySelector('.cone-badge');
                 if (badge) {
                     setTimeout(function () {
@@ -111,14 +104,16 @@
                     }, 500);
                 }
 
-                // Play sound
                 coneSound.currentTime = 0;
                 coneSound.play().catch(function () {});
+            } else {
+                row.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                row.style.opacity = '1';
+                row.style.transform = 'translateY(0)';
             }
         }, delay);
     });
 
-    // Show back button after last row + buffer
     setTimeout(function () {
         backBtn.style.transition = 'opacity 0.4s ease';
         backBtn.style.opacity = '1';
